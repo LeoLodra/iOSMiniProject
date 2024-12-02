@@ -7,42 +7,73 @@
 
 import UIKit
 
-struct MealResponse: Decodable {
-    let meals: [Menu]
-}
-
-struct Menu: Decodable {
-    let strMeal: String
-    let strCategory: String
-    let strArea: String
-    let strInstructions: String
-    let strMealThumbs: String?
-    let strTags: String?
-}
-
 class ViewController: UIViewController {
+    
+    var menu: [Menu] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.view.backgroundColor = .white
+        self.view.backgroundColor = .lightGray
         fetchData(from: "https://www.themealdb.com/api/json/v1/1/search.php?s=chicken")
     }
     
-    func displayDatas(_ datas: [Menu]) {
+    func displayDatas() {
         let scrollView = UIScrollView(frame: self.view.bounds)
-        scrollView.contentSize = CGSize(width: view.frame.width, height: CGFloat(datas.count) * 120)
+        scrollView.contentSize = CGSize(width: view.frame.width, height: CGFloat(menu.count) * 200)
         view.addSubview(scrollView)
-
-        for (index, menu) in datas.enumerated() {
-            let titleLabel = UILabel()
-            titleLabel.text = "\(menu.strMeal) - \(menu.strArea)"
-            titleLabel.textAlignment = .left
-            titleLabel.numberOfLines = 0
-            titleLabel.frame = CGRect(x: 20, y: CGFloat(index) * 20, width: view.frame.width - 40, height: 20)
-            scrollView.addSubview(titleLabel)
+        
+        for (index, menu) in menu.enumerated() {
+            
+            if let imageUrlString = menu.strMealThumb, let imageUrl = URL(string: imageUrlString) {
+                let cardView = UIView()
+                cardView.backgroundColor = .white
+                cardView.layer.cornerRadius = 10
+                cardView.frame = CGRect(x: 20, y: CGFloat(index) * 210, width: 150, height: 190)
+                scrollView.addSubview(cardView)
+                
+                let imageView = UIImageView()
+                imageView.contentMode = .scaleAspectFill
+                imageView.layer.masksToBounds = true
+                imageView.layer.cornerRadius = 10
+                imageView.translatesAutoresizingMaskIntoConstraints = false
+                cardView.addSubview(imageView)
+                
+                let titleLabel = UILabel()
+                titleLabel.text = "\(menu.strMeal) - \(menu.strArea)"
+                titleLabel.font = .systemFont(ofSize: 12, weight: .bold)
+                titleLabel.textAlignment = .left
+                titleLabel.numberOfLines = 0
+                titleLabel.translatesAutoresizingMaskIntoConstraints = false
+                cardView.addSubview(titleLabel)
+                
+                NSLayoutConstraint.activate([
+                    imageView.topAnchor.constraint(equalTo: cardView.topAnchor),
+                    imageView.heightAnchor.constraint(equalToConstant: 150),
+                    imageView.widthAnchor.constraint(equalToConstant: 150),
+                    imageView.centerXAnchor.constraint(equalTo: cardView.centerXAnchor),
+                    
+                    titleLabel.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 5),
+                    titleLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 2)
+                ])
+                
+                
+                let task = URLSession.shared.dataTask(with: imageUrl) { data, response, error in
+                    if let error = error {
+                        print("Error fetching image: \(error.localizedDescription)")
+                        return
+                    }
+                    if let data = data, let image = UIImage(data: data) {
+                        
+                        DispatchQueue.main.async {
+                            imageView.image = image
+                        }
+                    }
+                }
+                task.resume()
+            }
         }
     }
-
+    
     
     func fetchData(from urlString: String) {
         guard let url = URL(string: urlString) else {
@@ -62,12 +93,11 @@ class ViewController: UIViewController {
             }
             
             do {
-                let mealResponse = try JSONDecoder().decode(MealResponse.self, from: data)
-                let menus = mealResponse.meals
-                print("Fetched Menus: \(menus)")
+                let meal = try JSONDecoder().decode(Meal.self, from: data)
+                self.menu = meal.meals
                 
                 DispatchQueue.main.async {
-                    self.displayDatas(menus)
+                    self.displayDatas()
                 }
             } catch {
                 print("Error decoding JSON: \(error.localizedDescription)")
