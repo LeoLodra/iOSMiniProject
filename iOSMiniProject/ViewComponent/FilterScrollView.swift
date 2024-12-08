@@ -60,7 +60,7 @@ class FilterScrollView: UIView {
             let button = UIButton(type: .system)
             button.setTitle(category, for: .normal)
             button.setTitleColor(.black, for: .normal)
-            button.backgroundColor = .gray
+            button.backgroundColor = .lightGray
             button.layer.cornerRadius = 5
             button.tag = categories.firstIndex(of: category) ?? 0
             button.addTarget(target, action: action, for: .touchUpInside)

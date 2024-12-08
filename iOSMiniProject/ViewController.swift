@@ -16,7 +16,7 @@ class ViewController: UIViewController {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        collectionView.backgroundColor = .lightGray
+        collectionView.backgroundColor = .systemGray3
         collectionView.register(CardViewComponent.self, forCellWithReuseIdentifier: CardViewComponent.identifier)
         return collectionView
     }()
@@ -25,7 +25,7 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.view.backgroundColor = .lightGray
+        self.view.backgroundColor = .systemGray3
         
         self.collectionView.dataSource = self
         self.collectionView.delegate = self
@@ -55,6 +55,7 @@ class ViewController: UIViewController {
         self.searchController.searchResultsUpdater = self
         self.searchController.obscuresBackgroundDuringPresentation = false
         self.searchController.searchBar.placeholder = "Search"
+        self.searchController.searchBar.delegate = self
         
         self.navigationItem.searchController = searchController
         self.definesPresentationContext = false
@@ -82,7 +83,7 @@ class ViewController: UIViewController {
         if selectedFilters.contains(category) {
             // Deselect filter
             selectedFilters.removeAll { $0 == category }
-            sender.backgroundColor = .gray
+            sender.backgroundColor = .lightGray
         } else {
             // Select filter
             selectedFilters.append(category)
@@ -149,3 +150,9 @@ extension ViewController: UISearchResultsUpdating {
     }
 }
 
+extension ViewController: UISearchBarDelegate {
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.text = ""
+        self.vm.updateSearchController(searchBarText: "")
+    }
+}
