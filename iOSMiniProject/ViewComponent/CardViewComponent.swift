@@ -12,20 +12,9 @@ class CardViewComponent: UICollectionViewCell {
     private let imageView = UIImageView()
     private let titleLabel = UILabel()
     
-//    init(menu: Menu) {
-//        super.init(frame: .zero)
-//        setupView()
-//        configureView(menu: menu)
-//    }
-//    
-//    required init?(coder: NSCoder) {
-//        fatalError("init(coder:) has not been implemented")
-//    }
-    
     private func setupView() {
         self.backgroundColor = .white
         self.layer.cornerRadius = 10
-//        self.translatesAutoresizingMaskIntoConstraints = false
         
         imageView.contentMode = .scaleAspectFill
         imageView.layer.masksToBounds = true
@@ -33,7 +22,7 @@ class CardViewComponent: UICollectionViewCell {
         imageView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(imageView)
         
-        titleLabel.font = .systemFont(ofSize: 12, weight: .bold)
+        titleLabel.font = .systemFont(ofSize: 10, weight: .bold)
         titleLabel.textAlignment = .left
         titleLabel.numberOfLines = 0
         titleLabel.translatesAutoresizingMaskIntoConstraints = false

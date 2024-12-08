@@ -9,8 +9,8 @@ import UIKit
 
 class ViewController: UIViewController {
     private let vm = MenuViewModel()
-    
     private let searchController = UISearchController(searchResultsController: nil)
+    private var selectedFilters: [String] = [] // Tracks selected categories
     
     private let collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
@@ -21,6 +21,8 @@ class ViewController: UIViewController {
         return collectionView
     }()
     
+    private let filterScrollView = FilterScrollView()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         self.view.backgroundColor = .lightGray
@@ -30,6 +32,8 @@ class ViewController: UIViewController {
         
         self.setupTitleView()
         self.setupSearchController()
+        self.setupFilterButtons()
+        
         self.vm.onMenusUpdated = { [weak self] in
             DispatchQueue.main.async {
                 self?.collectionView.reloadData()
@@ -40,14 +44,12 @@ class ViewController: UIViewController {
             DispatchQueue.main.async {
                 self?.displayDatas()
             }
-            
         }
     }
     
     private func setupTitleView() {
         self.navigationItem.title = "Choose Your Menu"
     }
-    
     
     private func setupSearchController() {
         self.searchController.searchResultsUpdater = self
@@ -59,25 +61,53 @@ class ViewController: UIViewController {
         self.navigationItem.hidesSearchBarWhenScrolling = false
     }
     
+    private func setupFilterButtons() {
+        view.addSubview(filterScrollView)
+        filterScrollView.translatesAutoresizingMaskIntoConstraints = false
+        
+        let categories = ["Indian", "Chinese", "Japanese", "French", "Moroccan", "American", "Jamaican", "British", "Portugues", "Mexican", "Polish", "Greek"]
+        filterScrollView.configureButtons(categories: categories, target: self, action: #selector(filterButtonTapped(_:)))
+        
+        NSLayoutConstraint.activate([
+            filterScrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 0),
+            filterScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 10),
+            filterScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -10),
+            filterScrollView.heightAnchor.constraint(equalToConstant: 25)
+        ])
+    }
+    
+    @objc private func filterButtonTapped(_ sender: UIButton) {
+        guard let category = sender.title(for: .normal) else { return }
+        
+        if selectedFilters.contains(category) {
+            // Deselect filter
+            selectedFilters.removeAll { $0 == category }
+            sender.backgroundColor = .gray
+        } else {
+            // Select filter
+            selectedFilters.append(category)
+            sender.backgroundColor = .white
+        }
+        
+        self.vm.updateFilters(selectedFilters)
+    }
+    
     func displayDatas() {
         view.addSubview(collectionView)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
-            collectionView.topAnchor.constraint(equalTo: view.topAnchor, constant: 10),
+            collectionView.topAnchor.constraint(equalTo: filterScrollView.bottomAnchor, constant: 10),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
-    
 }
 
 extension ViewController: UICollectionViewDelegate, UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        //        return self.vm.menu.count
-        let inSearchMode = self.vm.inSearchMode(searchController)
-        return inSearchMode ? self.vm.filteredMenu.count : self.vm.menu.count
+        return self.vm.filteredMenu.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -85,9 +115,7 @@ extension ViewController: UICollectionViewDelegate, UICollectionViewDataSource {
             fatalError("Could not dequeue CardViewComponent")
         }
         
-        let inSearchMode = self.vm.inSearchMode(searchController)
-        //        let menu = self.vm.menu[indexPath.row]
-        let menu = inSearchMode ? self.vm.filteredMenu[indexPath.row] : self.vm.menu[indexPath.row]
+        let menu = self.vm.filteredMenu[indexPath.row]
         cell.configureView(menu: menu)
         
         return cell
@@ -97,7 +125,7 @@ extension ViewController: UICollectionViewDelegate, UICollectionViewDataSource {
 extension ViewController: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         let widthSize = (self.view.frame.width/2.3)
-        let heightSize = (self.view.frame.height*0.3)
+        let heightSize = (self.view.frame.height*0.25)
         return CGSize(width: widthSize, height: heightSize)
     }
     
