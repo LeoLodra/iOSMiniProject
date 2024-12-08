@@ -10,7 +10,7 @@ import UIKit
 class ViewController: UIViewController {
     private let vm = MenuViewModel()
     
-    private let titleView = TitleViewComponent()
+    private let searchController = UISearchController(searchResultsController: nil)
     
     private let collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
@@ -27,24 +27,36 @@ class ViewController: UIViewController {
         
         self.collectionView.dataSource = self
         self.collectionView.delegate = self
-        setupTitleView()
-        vm.fetchData(from: "https://www.themealdb.com/api/json/v1/1/search.php?s=chicken") {
+        
+        self.setupTitleView()
+        self.setupSearchController()
+        self.vm.onMenusUpdated = { [weak self] in
             DispatchQueue.main.async {
-                self.displayDatas()
+                self?.collectionView.reloadData()
+            }
+        }
+        
+        self.vm.fetchData(from: "https://www.themealdb.com/api/json/v1/1/search.php?s=chicken") { [weak self] in
+            DispatchQueue.main.async {
+                self?.displayDatas()
             }
             
         }
     }
     
-    func setupTitleView() {
-        view.addSubview(titleView)
+    private func setupTitleView() {
+        self.navigationItem.title = "Choose Your Menu"
+    }
+    
+    
+    private func setupSearchController() {
+        self.searchController.searchResultsUpdater = self
+        self.searchController.obscuresBackgroundDuringPresentation = false
+        self.searchController.searchBar.placeholder = "Search"
         
-        NSLayoutConstraint.activate([
-            titleView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            titleView.heightAnchor.constraint(equalToConstant: 50),
-            titleView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            titleView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
-        ])
+        self.navigationItem.searchController = searchController
+        self.definesPresentationContext = false
+        self.navigationItem.hidesSearchBarWhenScrolling = false
     }
     
     func displayDatas() {
@@ -52,7 +64,7 @@ class ViewController: UIViewController {
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
-            collectionView.topAnchor.constraint(equalTo: titleView.bottomAnchor, constant: 10),
+            collectionView.topAnchor.constraint(equalTo: view.topAnchor, constant: 10),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
@@ -63,7 +75,9 @@ class ViewController: UIViewController {
 
 extension ViewController: UICollectionViewDelegate, UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return self.vm.menu.count
+        //        return self.vm.menu.count
+        let inSearchMode = self.vm.inSearchMode(searchController)
+        return inSearchMode ? self.vm.filteredMenu.count : self.vm.menu.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -71,7 +85,9 @@ extension ViewController: UICollectionViewDelegate, UICollectionViewDataSource {
             fatalError("Could not dequeue CardViewComponent")
         }
         
-        let menu = self.vm.menu[indexPath.row]
+        let inSearchMode = self.vm.inSearchMode(searchController)
+        //        let menu = self.vm.menu[indexPath.row]
+        let menu = inSearchMode ? self.vm.filteredMenu[indexPath.row] : self.vm.menu[indexPath.row]
         cell.configureView(menu: menu)
         
         return cell
@@ -95,6 +111,13 @@ extension ViewController: UICollectionViewDelegateFlowLayout {
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
         return UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
+    }
+}
+
+extension ViewController: UISearchResultsUpdating {
+    func updateSearchResults(for searchController: UISearchController) {
+        guard searchController.isActive else { return }
+        self.vm.updateSearchController(searchBarText: searchController.searchBar.text)
     }
 }
 

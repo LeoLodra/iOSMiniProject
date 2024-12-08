@@ -9,7 +9,7 @@ struct Meal: Codable {
     let meals: [Menu]
 }
 
-struct Menu: Codable {
+struct Menu: Codable, Equatable {
     let strMeal: String
     let strCategory: String
     let strArea: String
