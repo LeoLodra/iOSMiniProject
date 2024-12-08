@@ -8,104 +8,93 @@
 import UIKit
 
 class ViewController: UIViewController {
+    private let vm = MenuViewModel()
     
-    var menu: [Menu] = []
+    private let titleView = TitleViewComponent()
+    
+    private let collectionView: UICollectionView = {
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .vertical
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.backgroundColor = .lightGray
+        collectionView.register(CardViewComponent.self, forCellWithReuseIdentifier: CardViewComponent.identifier)
+        return collectionView
+    }()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         self.view.backgroundColor = .lightGray
-        fetchData(from: "https://www.themealdb.com/api/json/v1/1/search.php?s=chicken")
+        
+        self.collectionView.dataSource = self
+        self.collectionView.delegate = self
+        setupTitleView()
+        vm.fetchData(from: "https://www.themealdb.com/api/json/v1/1/search.php?s=chicken") {
+            DispatchQueue.main.async {
+                self.displayDatas()
+            }
+            
+        }
+    }
+    
+    func setupTitleView() {
+        view.addSubview(titleView)
+        
+        NSLayoutConstraint.activate([
+            titleView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            titleView.heightAnchor.constraint(equalToConstant: 50),
+            titleView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            titleView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
     }
     
     func displayDatas() {
-        let scrollView = UIScrollView(frame: self.view.bounds)
-        scrollView.contentSize = CGSize(width: view.frame.width, height: CGFloat(menu.count) * 200)
-        view.addSubview(scrollView)
+        view.addSubview(collectionView)
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
         
-        for (index, menu) in menu.enumerated() {
-            
-            if let imageUrlString = menu.strMealThumb, let imageUrl = URL(string: imageUrlString) {
-                let cardView = UIView()
-                cardView.backgroundColor = .white
-                cardView.layer.cornerRadius = 10
-                cardView.frame = CGRect(x: 20, y: CGFloat(index) * 210, width: 150, height: 190)
-                scrollView.addSubview(cardView)
-                
-                let imageView = UIImageView()
-                imageView.contentMode = .scaleAspectFill
-                imageView.layer.masksToBounds = true
-                imageView.layer.cornerRadius = 10
-                imageView.translatesAutoresizingMaskIntoConstraints = false
-                cardView.addSubview(imageView)
-                
-                let titleLabel = UILabel()
-                titleLabel.text = "\(menu.strMeal) - \(menu.strArea)"
-                titleLabel.font = .systemFont(ofSize: 12, weight: .bold)
-                titleLabel.textAlignment = .left
-                titleLabel.numberOfLines = 0
-                titleLabel.translatesAutoresizingMaskIntoConstraints = false
-                cardView.addSubview(titleLabel)
-                
-                NSLayoutConstraint.activate([
-                    imageView.topAnchor.constraint(equalTo: cardView.topAnchor),
-                    imageView.heightAnchor.constraint(equalToConstant: 150),
-                    imageView.widthAnchor.constraint(equalToConstant: 150),
-                    imageView.centerXAnchor.constraint(equalTo: cardView.centerXAnchor),
-                    
-                    titleLabel.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 5),
-                    titleLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 2)
-                ])
-                
-                
-                let task = URLSession.shared.dataTask(with: imageUrl) { data, response, error in
-                    if let error = error {
-                        print("Error fetching image: \(error.localizedDescription)")
-                        return
-                    }
-                    if let data = data, let image = UIImage(data: data) {
-                        
-                        DispatchQueue.main.async {
-                            imageView.image = image
-                        }
-                    }
-                }
-                task.resume()
-            }
-        }
+        NSLayoutConstraint.activate([
+            collectionView.topAnchor.constraint(equalTo: titleView.bottomAnchor, constant: 10),
+            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
     }
     
-    
-    func fetchData(from urlString: String) {
-        guard let url = URL(string: urlString) else {
-            print("Invalid URL")
-            return
-        }
-        
-        let task = URLSession.shared.dataTask(with: url) { data, response, error in
-            if let error = error {
-                print("Error fetching data: \(error.localizedDescription)")
-                return
-            }
-            
-            guard let data = data else {
-                print("No data returned")
-                return
-            }
-            
-            do {
-                let meal = try JSONDecoder().decode(Meal.self, from: data)
-                self.menu = meal.meals
-                
-                DispatchQueue.main.async {
-                    self.displayDatas()
-                }
-            } catch {
-                print("Error decoding JSON: \(error.localizedDescription)")
-            }
-        }
-        
-        task.resume()
+}
+
+extension ViewController: UICollectionViewDelegate, UICollectionViewDataSource {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return self.vm.menu.count
     }
     
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CardViewComponent.identifier, for: indexPath) as? CardViewComponent else {
+            fatalError("Could not dequeue CardViewComponent")
+        }
+        
+        let menu = self.vm.menu[indexPath.row]
+        cell.configureView(menu: menu)
+        
+        return cell
+    }
+}
+
+extension ViewController: UICollectionViewDelegateFlowLayout {
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        let widthSize = (self.view.frame.width/2.3)
+        let heightSize = (self.view.frame.height*0.3)
+        return CGSize(width: widthSize, height: heightSize)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
+        return 12
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
+        return 2
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
+        return UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
+    }
 }
 

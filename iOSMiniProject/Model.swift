@@ -5,11 +5,11 @@
 //  Created by Leonardo Marhan on 02/12/24.
 //
 
-struct Meal: Decodable {
+struct Meal: Codable {
     let meals: [Menu]
 }
 
-struct Menu: Decodable {
+struct Menu: Codable {
     let strMeal: String
     let strCategory: String
     let strArea: String
