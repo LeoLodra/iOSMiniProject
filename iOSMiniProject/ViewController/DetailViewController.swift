@@ -27,7 +27,7 @@ class DetailViewController: UIViewController {
         super.viewDidLoad()
         self.view.backgroundColor = .systemGray3
         
-        self.navigationController?.navigationBar.prefersLargeTitles = true
+        self.navigationController?.navigationBar.prefersLargeTitles = false
         
         self.setupImage()
         self.setupCategory()
@@ -53,7 +53,7 @@ class DetailViewController: UIViewController {
         view.addSubview(imageView)
         
         NSLayoutConstraint.activate([
-            imageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 30),
+            imageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 90),
             imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             imageView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             imageView.heightAnchor.constraint(equalToConstant: 200),
@@ -87,6 +87,29 @@ class DetailViewController: UIViewController {
     }
     
     private func setupIngredients() {
+        guard let menuItem = menuItem else { return }
         
+        ingredientTitle.text = "Ingredients"
+        ingredientTitle.font = UIFont.systemFont(ofSize: 16, weight: .bold)
+        ingredientTitle.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(ingredientTitle)
+        
+//        for i in 1...20 {
+//            
+//        }
+        if let ingredient = menuItem.strIngredient1, let measure = menuItem.strMeasure1 {
+            ingredientLabel.text = "\(measure) of \(ingredient)"
+        }
+        ingredientLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        ingredientLabel.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(ingredientLabel)
+        
+        NSLayoutConstraint.activate([
+            ingredientTitle.topAnchor.constraint(equalTo: categoryView.bottomAnchor, constant: 10),
+            ingredientTitle.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            
+            ingredientLabel.topAnchor.constraint(equalTo: ingredientTitle.bottomAnchor, constant: 10),
+            ingredientLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16)
+        ])
     }
 }

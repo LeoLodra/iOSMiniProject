@@ -32,7 +32,6 @@ class FilterScrollView: UIView {
     
     required init?(coder: NSCoder) {
         super.init(coder: coder)
-        setupView()
     }
     
     private func setupView() {
@@ -54,7 +53,6 @@ class FilterScrollView: UIView {
     }
     
     func configureButtons(categories: [String], target: Any?, action: Selector) {
-        stackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
         
         categories.forEach { category in
             let button = UIButton(type: .system)
