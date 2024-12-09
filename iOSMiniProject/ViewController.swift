@@ -93,7 +93,7 @@ class ViewController: UIViewController {
         self.vm.updateFilters(selectedFilters)
     }
     
-    func displayDatas() {
+    private func displayDatas() {
         view.addSubview(collectionView)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         
@@ -120,6 +120,16 @@ extension ViewController: UICollectionViewDelegate, UICollectionViewDataSource {
         cell.configureView(menu: menu)
         
         return cell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let selectedMenu = self.vm.filteredMenu[indexPath.row]
+        
+        self.navigationItem.backButtonTitle = selectedMenu.strMeal
+        
+        let detailVC = DetailViewController()
+        detailVC.menuItem = selectedMenu
+        self.navigationController?.pushViewController(detailVC, animated: true)
     }
 }
 
